@@ -5,7 +5,7 @@ import time
 import net.http
 import x.json2 as json
 
-[heap]
+@[heap]
 struct RateLimiter {
 pub mut:
 	mutex   &sync.Mutex = sync.new_mutex()
@@ -25,7 +25,7 @@ pub fn (mut rl RateLimiter) get_bucket(key string) &Bucket {
 		rl.mutex.unlock()
 	}
 	if key in rl.buckets {
-		return rl.buckets[key]
+		return rl.buckets[key] or { return unsafe { nil } }
 	}
 	bucket := &Bucket{
 		rl: rl
@@ -65,7 +65,7 @@ pub fn (mut rl RateLimiter) lock_bucket_obj(mut bucket Bucket) &Bucket {
 }
 
 // Bucket is needed to control the number of requests up to a certain endpoint
-[heap]
+@[heap]
 struct Bucket {
 pub mut:
 	rl        &RateLimiter
@@ -76,7 +76,7 @@ pub mut:
 }
 
 // Update bucket limits from responce headers
-pub fn (mut bucket Bucket) release(header http.Header) {
+pub fn (mut bucket Bucket) release(header http.Header) ! {
 	defer {
 		bucket.mutex.unlock()
 	}
@@ -84,10 +84,10 @@ pub fn (mut bucket Bucket) release(header http.Header) {
 		return
 	}
 	if header.contains_custom('x-ratelimit-reset') {
-		bucket.reset = u64((header.get_custom('x-ratelimit-reset') or {}).f64() * 1000)
+		bucket.reset = u64((header.get_custom('x-ratelimit-reset')!).f64() * 1000)
 	}
 	if header.contains_custom('x-ratelimit-remaining') {
-		bucket.remaining = (header.get_custom('x-ratelimit-remaining') or {}).int()
+		bucket.remaining = (header.get_custom('x-ratelimit-remaining')!).int()
 	}
 }
 

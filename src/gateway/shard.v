@@ -6,12 +6,10 @@ import net.websocket
 import eb
 import gateway.packets
 
-const (
-	default_gateway = 'wss://gateway.discord.gg/?v=8&encoding=json'
-)
+const default_gateway = 'wss://gateway.discord.gg/?v=8&encoding=json'
 
 pub struct Config {
-	token           string [required]
+	token           string @[required]
 	intents         Intent = guilds | guild_messages
 	shard_id        int
 	shards_in_total int = 1
@@ -19,7 +17,7 @@ pub struct Config {
 	dispatchers     int = 1
 }
 
-[heap]
+@[heap]
 pub struct Shard {
 	gateway string
 	token   string
@@ -51,7 +49,7 @@ pub mut:
 // Create new Connection
 pub fn new_shard(config Config) !&Shard {
 	gateway := if config.gateway != '' { config.gateway } else { gateway.default_gateway }
-	mut ws := websocket.new_client(gateway) !
+	mut ws := websocket.new_client(gateway)!
 	mut shard := &Shard{
 		gateway: gateway
 		token: config.token
@@ -89,10 +87,10 @@ fn (mut shard Shard) run_websocket() {
 	}
 	for !shard.running {
 		shard.ws.connect() or {
-			shard.log.warn('Websocket #$shard.id: Unable to connect to gateway')
+			shard.log.warn('Websocket #${shard.id}: Unable to connect to gateway')
 			continue
 		}
-		shard.ws.listen() or { shard.log.warn('#$shard.id Websocket listen: $err') }
+		shard.ws.listen() or { shard.log.warn('#${shard.id} Websocket listen: ${err}') }
 		time.sleep(5 * time.second)
 	}
 }
@@ -108,7 +106,7 @@ fn (mut shard Shard) run_heartbeat() {
 			return
 		}
 		time.sleep(50 * time.millisecond)
-		if shard.ws.state in [.connecting, .closing, .closed] {
+		if shard.ws.get_state() in [.connecting, .closing, .closed] {
 			shard.heartbeat_acked = true
 			shard.heartbeat_interval = 1000
 			shard.last_heartbeat = 0
@@ -116,8 +114,8 @@ fn (mut shard Shard) run_heartbeat() {
 		}
 		now := time.now().unix_time_milli()
 		if u64(now) - shard.last_heartbeat > shard.heartbeat_interval {
-			if shard.heartbeat_acked != true {
-				if shard.ws.state == .open {
+			if !shard.heartbeat_acked {
+				if shard.ws.get_state() == .open {
 					shard.ws.close(1000, "heartbeat ack didn't come") or { panic(err) }
 				}
 				continue
@@ -128,7 +126,7 @@ fn (mut shard Shard) run_heartbeat() {
 			}
 			message := heartbeat.to_json()
 			shard.ws.write_string(message) or {
-				shard.log.error('Something went when tried to write to websocket: $err')
+				shard.log.error('Something went when tried to write to websocket: ${err}')
 			}
 			shard.last_heartbeat = u64(now)
 			shard.heartbeat_acked = false
@@ -138,7 +136,7 @@ fn (mut shard Shard) run_heartbeat() {
 
 // Send publish from Websocket
 fn (mut shard Shard) dispatch(data voidptr) {
-	if shard.reciever != voidptr(0) {
+	if shard.reciever != unsafe { nil } {
 		shard.events <- DispatchArgs{
 			reciever: shard.reciever
 			data: data

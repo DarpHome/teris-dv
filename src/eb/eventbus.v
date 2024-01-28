@@ -4,7 +4,7 @@ module eb
 pub type EventHandlerFn = fn (client voidptr, event voidptr)
 
 // Registry of event handlers
-[heap]
+@[heap]
 struct Registry {
 mut:
 	events []EventHandler
@@ -12,11 +12,11 @@ mut:
 
 struct EventHandler {
 	name    string
-	handler EventHandlerFn
+	handler EventHandlerFn = unsafe { nil }
 }
 
 // EventBus allows to subscribe and publish events
-[heap]
+@[heap]
 pub struct EventBus {
 pub mut:
 	registry &Registry

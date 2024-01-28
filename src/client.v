@@ -10,7 +10,7 @@ import rest
 // Config struct
 pub struct Config {
 pub mut:
-	token                string         [required]
+	token                string         @[required]
 	intents              gateway.Intent = gateway.guilds | gateway.guild_messages
 	shard_count          int = 1
 	userdata             voidptr
@@ -18,7 +18,7 @@ pub mut:
 }
 
 // Client represents a connection to the Discord API
-[heap]
+@[heap]
 pub struct Client {
 	token   string
 	intents gateway.Intent
@@ -59,7 +59,7 @@ pub fn new(config Config) !&Client {
 			shard_id: i
 			shards_in_total: config.shard_count
 			dispatchers: config.dispatchers_on_shard
-		) !
+		)!
 		shard.log = client.log
 		$if dv_ws_debug ? {
 			shard.set_ws_log_level(.debug)
@@ -100,7 +100,7 @@ pub fn (mut client Client) session_id(guild_id string) string {
 fn prefix(level log.Level, colors_supported bool) string {
 	if colors_supported {
 		v := term.bold(term.rgb(95, 155, 230, 'v'))
-		return term.bright_white('[discord.$v] ')
+		return term.bright_white('[discord.${v}] ')
 	}
 	return '[discord.v] '
 }

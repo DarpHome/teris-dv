@@ -8,7 +8,7 @@ pub:
 	data     voidptr
 }
 
-[heap]
+@[heap]
 pub struct Dispatcher {
 	packages chan DispatchArgs
 mut:

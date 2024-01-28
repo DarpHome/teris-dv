@@ -3,9 +3,7 @@ module snowflake
 import time
 
 // Discord's epoch in milliseconds
-pub const (
-	discord_epoch = u64(1420070400000)
-)
+pub const discord_epoch = u64(1420070400000)
 
 // Snowflake is the type for a Discord snowflake
 pub struct Snowflake {

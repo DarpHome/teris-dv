@@ -5,24 +5,22 @@ import strings
 import encoding.base64
 
 // Copied mime types from net.http module
-const (
-	mime_types = {
-		'.css':  'text/css; charset=utf-8'
-		'.gif':  'image/gif'
-		'.htm':  'text/html; charset=utf-8'
-		'.html': 'text/html; charset=utf-8'
-		'.jpg':  'image/jpeg'
-		'.js':   'application/javascript'
-		'.json': 'application/json'
-		'.md':   'text/markdown; charset=utf-8'
-		'.pdf':  'application/pdf'
-		'.png':  'image/png'
-		'.svg':  'image/svg+xml'
-		'.txt':  'text/plain; charset=utf-8'
-		'.wasm': 'application/wasm'
-		'.xml':  'text/xml; charset=utf-8'
-	}
-)
+const mime_types = {
+	'.css':  'text/css; charset=utf-8'
+	'.gif':  'image/gif'
+	'.htm':  'text/html; charset=utf-8'
+	'.html': 'text/html; charset=utf-8'
+	'.jpg':  'image/jpeg'
+	'.js':   'application/javascript'
+	'.json': 'application/json'
+	'.md':   'text/markdown; charset=utf-8'
+	'.pdf':  'application/pdf'
+	'.png':  'image/png'
+	'.svg':  'image/svg+xml'
+	'.txt':  'text/plain; charset=utf-8'
+	'.wasm': 'application/wasm'
+	'.xml':  'text/xml; charset=utf-8'
+}
 
 // FormField can be text or file
 type FormField = FormFile | string
@@ -43,7 +41,7 @@ pub mut:
 }
 
 // Create new FormData with default boundary
-pub fn new() ?FormData {
+pub fn new() !FormData {
 	return FormData{
 		boundary: 'X-DISCORD.V-BOUNDARY'
 		fields: map[string]FormField{}
@@ -74,7 +72,7 @@ pub fn (mut f FormData) add_file(name string, filename string, data []byte) {
 
 // Returns http header to include it into request
 pub fn (f FormData) content_type() string {
-	return 'multipart/form-data; charset=utf-8; boundary=$f.boundary'
+	return 'multipart/form-data; charset=utf-8; boundary=${f.boundary}'
 }
 
 // Encode FormData, returns body of http request
@@ -82,17 +80,17 @@ pub fn (f FormData) encode() string {
 	mut builder := strings.new_builder(200)
 	builder.write_byte(`\n`)
 	for k, v in f.fields {
-		builder.write_string('--$f.boundary\n')
+		builder.write_string('--${f.boundary}\n')
 		match v {
 			string {
-				builder.write_string("Content-Disposition: form-data; name=\"$k\"\n")
+				builder.write_string("Content-Disposition: form-data; name=\"${k}\"\n")
 				builder.write_byte(`\n`)
 				builder.write_string(v)
 				builder.write_byte(`\n`)
 			}
 			FormFile {
-				builder.write_string("Content-Disposition: form-data; name=\"$k\"; filename=\"$v.filename\"\n")
-				builder.write_string('Content-Type: $v.content_type\n')
+				builder.write_string("Content-Disposition: form-data; name=\"${k}\"; filename=\"${v.filename}\"\n")
+				builder.write_string('Content-Type: ${v.content_type}\n')
 				builder.write_string('Content-Transfer-Encoding: base64\n')
 				builder.write_byte(`\n`)
 				builder.write_string(base64.encode(v.data))
@@ -100,6 +98,6 @@ pub fn (f FormData) encode() string {
 			}
 		}
 	}
-	builder.write_string('--$f.boundary--')
+	builder.write_string('--${f.boundary}--')
 	return builder.str()
 }
